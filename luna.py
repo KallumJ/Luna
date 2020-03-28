@@ -68,7 +68,6 @@ class lifx:
         response = requests.put('https://api.lifx.com/v1/lights/all/state', data=payload, headers=headers)
 
 class weather:
-    key = config.openWeatherKey
 
     @staticmethod
     def currentWeather():
@@ -149,12 +148,16 @@ def main():
             lifx.setColour("yellow")
         elif command.__contains__("purple"):
             lifx.setColour("purple")
-    elif command.__contains__("weather") and command.__contains__("today"):
-        weather.currentWeather()
+        elif command.__contains__("white"):
+            lifx.setColour("white")
+    elif command.__contains__("weather"):
+        if command.__contains__("today"):
+            weather.currentWeather()
+    else:
+        cprint("I'm sorry, I don't understand.", "magenta")
 
     # Re ask
     main()
-
 
 # Start the program
 main()
