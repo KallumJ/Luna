@@ -3,7 +3,7 @@ import requests
 import config
 from datetime import datetime
 from termcolor import colored, cprint
-
+import json
 
 # Create LIFX class
 class lifx:
@@ -67,6 +67,31 @@ class lifx:
         # Send request
         response = requests.put('https://api.lifx.com/v1/lights/all/state', data=payload, headers=headers)
 
+class weather:
+    key = config.openWeatherKey
+
+    @staticmethod
+    def currentWeather():
+        # Find city
+        ipData = requests.get("https://api.ipdata.co/?api-key=" + config.ipDataKey).json()
+        city = ipData["city"]
+
+        # Request current weather information
+        cWeather = requests.get("http://api.openweathermap.org/data/2.5/weather?q=" + city + "&appid=" + config.openWeatherKey)
+
+        # Store weather information
+        cWeatherJSON = json.loads(cWeather.text)
+
+        # Parse current weather
+        cWeatherDict = cWeatherJSON["weather"]
+        cWeatherDesc = cWeatherDict[0].get("description")
+
+        # Parse current temperature
+        cWeatherMain = cWeatherJSON["main"]
+        cWeatherTemp = str(round(cWeatherMain.get("temp") - 273.15))
+
+        # Print reponse
+        cprint("The weather in " + city + " is " + cWeatherDesc + " with a temperature of " + cWeatherTemp + chr(176) + "C", "magenta")
 
 # Declare method to get command from user
 def getCommand():
@@ -124,6 +149,8 @@ def main():
             lifx.setColour("yellow")
         elif command.__contains__("purple"):
             lifx.setColour("purple")
+    elif command.__contains__("weather") and command.__contains__("today"):
+        weather.currentWeather()
 
     # Re ask
     main()
