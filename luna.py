@@ -10,6 +10,7 @@ import html
 import vlc
 import random
 from mutagen.easyid3 import EasyID3
+import feedparser
 
 
 # Create LIFX class
@@ -124,7 +125,7 @@ class weather:
 # Declare method to get command from user
 def getCommand():
     # Get input
-    command = input()
+    command = input().lower()
     return command
 
 
@@ -196,7 +197,7 @@ def trivia():
 
         lunaSay("Would you like to play again?")
 
-        answer = input()
+        answer = getCommand()
 
         if answer.lower() == "yes" or answer.lower() == "y":
             response = False
@@ -210,6 +211,9 @@ def trivia():
 
 # Declare method to play music
 def music(directory, shuffle):
+    # TODO Doesn't continue playing song
+    # TODO Invalid sample rate issues
+
     songs = []
 
     # Create array of all the songs in the directory
@@ -255,7 +259,7 @@ def music(directory, shuffle):
                    "magenta")
 
             # Get command
-            command = input()
+            command = getCommand()
 
             # If command is to pause
             if command.__contains__("pause"):
@@ -286,6 +290,73 @@ def music(directory, shuffle):
             # If command is not recognised
             else:
                 cprint("I don't understand. Please please try again", "magenta")
+
+
+# Declare method to play podcast
+def podcast(pod):
+    # Declare dictionary of podcasts
+    podcasts = {
+        "triforce": "http://yogpod.libsyn.com/rss",
+        "truegeordie": "https://audioboom.com/channels/4902377.rss"
+    }
+
+    # Parse required podcast
+    if str(pod).__contains__("tri"):
+        # GET TRIFORCE URL
+
+        # Parse link
+        triforce = feedparser.parse(podcasts.get("triforce"))
+
+        # Find number of entires
+        numOfEntries = len(triforce.entries)
+
+        # Read in the entry
+        entry = triforce.entries[random.randint(1, numOfEntries - 85)]
+
+        # Find the url
+        url = entry.enclosures[0].get("href")
+
+    elif str(pod).__contains__("true"):
+        # GET TG URL
+        # Parse link
+        tg = feedparser.parse(podcasts.get("truegeordie"))
+
+        # Find number of entries
+        numOfEntries = len(tg.entries)
+
+        # Read in the entry
+        entry = tg.entries[random.randint(1, numOfEntries)].enclosures
+
+        # Find the URL
+        url = entry[0].get("href")
+
+    # Play the media
+    instance = vlc.Instance()
+    player = instance.media_player_new()
+    media = instance.media_new(url)
+    media.get_mrl()
+    player.set_media(media)
+    lunaSay("Playing podcast!")
+    player.play()
+
+    # While no response to stop is given
+    valid = False
+    while not valid:
+        cprint("Let me know when to whether to pause, play, or stop the podcast", "magenta")
+
+        command = getCommand()
+
+        if command.__contains__("stop"):
+            player.stop()
+            lunaSay("Stopping podcast...")
+            valid = True
+        elif command.__contains__("pause"):
+            player.pause()
+            lunaSay("Pausing...")
+        elif command.__contains__("play") or command.__contains__("resume"):
+            player.play()
+        else:
+            lunaSay("I do not understand")
 
 
 # Declare main loop
@@ -346,7 +417,7 @@ def main():
         while not valid:
             lunaSay("What colour would you like to flash the lights?")
 
-            answer = input().lower()
+            answer = getCommand()
 
             if answer.__contains__("not") or answer.__contains__("don't") or answer.__contains__(
                     "dont") or answer.__contains__("no"):
@@ -374,7 +445,7 @@ def main():
             while not valid:
                 lunaSay("Would you like to know the weather today, or for the week?")
 
-                answer = input().lower()
+                answer = getCommand()
                 if answer.__contains__("today"):
                     valid = True
                     weather.currentWeather()
@@ -397,6 +468,7 @@ def main():
 
     # Play music
     elif command.__contains__("music") or command.__contains__("song"):
+        # TODO Regular Expressions on File Directory
 
         # While no valid response is given
         valid = False
@@ -404,7 +476,7 @@ def main():
 
             # Ask for file path
             lunaSay("Please specify the file path to where your music is located")
-            directory = input().lower()
+            directory = getCommand()
 
             # If file path is empty
             if not directory:
@@ -418,7 +490,7 @@ def main():
 
             # Ask if they are to shuffle
             lunaSay("Would you like to shuffle?")
-            shuffle = input().lower()
+            shuffle = getCommand()
 
             # Parse response
             if shuffle.__contains__("yes") or shuffle == "y":
@@ -427,6 +499,27 @@ def main():
             elif shuffle.__contains__("no") or shuffle == "n":
                 valid = True
                 music(directory, shuffle=False)
+            else:
+                lunaSay("I do not understand.")
+
+    # Play podcast
+    elif command.__contains__("podcast"):
+
+        # While no valid response is given
+        valid = False
+        while not valid:
+            lunaSay("What podcast would you like?")
+
+            pod = getCommand()
+
+            if pod.__contains__("tri"):
+                valid = True
+                podcast("tri")
+            elif pod.__contains__("true"):
+                valid = True
+                podcast("true")
+            elif pod.__contains__("cancel"):
+                valid = True
             else:
                 lunaSay("I do not understand.")
 
